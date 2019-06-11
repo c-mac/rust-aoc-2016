@@ -1,0 +1,7 @@
+[package]
+name = "p01"
+version = "0.1.0"
+authors = ["Cameron McCallie <mccallie.cameron@gmail.com>"]
+edition = "2018"
+
+[dependencies]
