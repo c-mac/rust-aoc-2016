@@ -1,77 +1,112 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
 type Result<T> = std::result::Result<T, Box<std::error::Error>>;
 
+// From: https://stackoverflow.com/questions/28392008/more-concise-hashmap-initialization
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
 fn main() -> Result<()> {
-    let state_map: HashMap<u32, [(char, Option<u32>); 4]> = [
-        (
-            1,
-            [('U', None), ('R', Some(2)), ('D', Some(4)), ('L', None)],
-        ),
-        (
-            2,
-            [('U', None), ('R', Some(3)), ('D', Some(5)), ('L', Some(1))],
-        ),
-        (
-            3,
-            [('U', None), ('R', None), ('D', Some(6)), ('L', Some(2))],
-        ),
-        (
-            4,
-            [('U', Some(1)), ('R', Some(5)), ('D', Some(7)), ('L', None)],
-        ),
-        (
-            5,
-            [
-                ('U', Some(2)),
-                ('R', Some(6)),
-                ('D', Some(8)),
-                ('L', Some(4)),
-            ],
-        ),
-        (
-            6,
-            [('U', Some(3)), ('R', None), ('D', Some(9)), ('L', Some(5))],
-        ),
-        (
-            7,
-            [('U', Some(4)), ('R', Some(8)), ('D', None), ('L', None)],
-        ),
-        (
-            8,
-            [('U', Some(5)), ('R', Some(9)), ('D', None), ('L', Some(7))],
-        ),
-        (
-            9,
-            [('U', Some(6)), ('R', None), ('D', None), ('L', Some(8))],
-        ),
-    ]
-    .iter()
-    .cloned()
-    .collect();
-    let mut state_machine: Vec<State> = Vec::new();
-    for i in 1..10 {
-        state_machine.push(State {
-            value: i,
-            neighbors: HashMap::new(),
-        })
-    }
-    for (index, neighbors) in state_map {
-        add_neighbors(&mut state_machine, index as usize, &neighbors);
-    }
-    let fname = "input.txt";
+    let states = hashmap![
+        'A' => hashmap![
+            'U' => Some('6'),
+            'R' => Some('B'),
+            'D' => None,
+            'L' => None
+        ],
+        'B' => hashmap![
+            'U' => Some('7'),
+            'R' => Some('C'),
+            'D' => Some('D'),
+            'L' => Some('A')
+        ],
+        'C' => hashmap![
+            'U' => Some('8'),
+            'R' => None,
+            'D' => None,
+            'L' => Some('B')
+        ],
+        'D' => hashmap![
+            'U' => Some('B'),
+            'R' => None,
+            'D' => None,
+            'L' => None
+        ],
+        '1' => hashmap![
+            'U' => None,
+            'R' => None,
+            'D' => Some('3'),
+            'L' => None
+        ],
+        '2' => hashmap![
+            'U' => None,
+            'R' => Some('3'),
+            'D' => Some('6'),
+            'L' => None
+        ],
+        '3' => hashmap![
+            'U' => Some('1'),
+            'R' => Some('4'),
+            'D' => Some('7'),
+            'L' => Some('2')
+        ],
+        '4' => hashmap![
+            'U' => None,
+            'R' => None,
+            'D' => Some('8'),
+            'L' => Some('3')
+        ],
+        '5' => hashmap![
+            'U' => None,
+            'R' => Some('6'),
+            'D' => None,
+            'L' => None
+        ],
+        '6' => hashmap![
+            'U' => Some('2'),
+            'R' => Some('7'),
+            'D' => Some('A'),
+            'L' => Some('5')
+        ],
+        '7' => hashmap![
+            'U' => Some('3'),
+            'R' => Some('8'),
+            'D' => Some('B'),
+            'L' => Some('6')
+        ],
+        '8' => hashmap![
+            'U' => Some('4'),
+            'R' => Some('9'),
+            'D' => Some('C'),
+            'L' => Some('7')
+        ],
+        '9' => hashmap![
+            'U' => None,
+            'R' => None,
+            'D' => None,
+            'L' => Some('8')
+        ]
+    ];
+    let fname = "input-cam.txt";
     let contents = get_contents(fname)?;
-    let mut ret: Vec<u32> = Vec::new();
-    let mut state = &state_machine[4];
+    let mut ret: Vec<char> = Vec::new();
+    // Initial state
+    let mut state_char = '5';
+    let mut state = &states[&state_char];
     for line in contents.split("\n") {
         for direction in line.chars() {
-            if let Some(next_state) = state.neighbors[&direction] {
-                state = &state_machine[(next_state - 1) as usize];
+            if let Some(next_state_char) = state[&direction] {
+                state_char = next_state_char;
+                state = &states[&state_char];
             }
         }
-        ret.push(state.value);
+        ret.push(state_char);
     }
     dbg!(ret);
     Ok(())
@@ -85,17 +120,4 @@ fn get_contents(fname: &str) -> Result<String> {
     f.read_to_string(&mut contents)?;
 
     Ok(contents.trim().to_string())
-}
-
-fn add_neighbors(state_machine: &mut Vec<State>, index: usize, neighbors: &[(char, Option<u32>)]) {
-    let state = &mut state_machine[index - 1];
-    for neighbor in neighbors {
-        state.neighbors.insert(neighbor.0, neighbor.1);
-    }
-}
-
-#[derive(Debug)]
-struct State {
-    value: u32,
-    neighbors: HashMap<char, Option<u32>>,
 }
