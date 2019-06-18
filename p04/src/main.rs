@@ -17,7 +17,7 @@ fn main() -> Result<()> {
             let len = sector_id_and_checksum.len();
             let sector_id = sector_id_and_checksum[..index]
                 .to_string()
-                .parse::<u32>()
+                .parse::<usize>()
                 .unwrap();
             let checksum = sector_id_and_checksum[index + 1..len - 1].to_string();
             let characters = split_line.join("");
@@ -27,7 +27,7 @@ fn main() -> Result<()> {
             }
             (frequency, sector_id, checksum)
         })
-        .collect::<Vec<(HashMap<char, usize>, u32, String)>>();
+        .collect::<Vec<(HashMap<char, usize>, usize, String)>>();
     let acc = parsed.iter().fold(0, |a, entry| {
         let frequency = &entry.0;
         let sector_id = entry.1;
@@ -50,7 +50,41 @@ fn main() -> Result<()> {
         }
     });
     dbg!(acc);
+
+    contents
+        .trim()
+        .split("\n")
+        .map(|line| {
+            let mut split_line = line.split("-").collect::<Vec<&str>>();
+            let sector_id_and_checksum = split_line.pop().unwrap();
+            let index = sector_id_and_checksum.find('[').unwrap();
+            let sector_id = sector_id_and_checksum[..index]
+                .to_string()
+                .parse::<usize>()
+                .unwrap();
+            let decrypted = split_line
+                .iter()
+                .map(|word| decrypt(word, sector_id))
+                .collect::<Vec<String>>();
+            dbg!((sector_id, &decrypted));
+            decrypted
+        })
+        .collect::<Vec<Vec<String>>>();
+
     Ok(())
+}
+
+static ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+fn decrypt(word: &str, sector_id: usize) -> String {
+    word.chars()
+        .map(|c| {
+            ALPHABET
+                .chars()
+                .nth((sector_id + ALPHABET.find(c.to_uppercase().nth(0).unwrap()).unwrap()) % 26)
+                .unwrap()
+        })
+        .collect::<String>()
 }
 
 // figure out how to put this in a aoc utility library
