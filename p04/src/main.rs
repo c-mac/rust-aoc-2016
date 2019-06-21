@@ -6,7 +6,7 @@ use std::io::Read;
 type Result<T> = std::result::Result<T, Box<std::error::Error>>;
 
 fn main() -> Result<()> {
-    let contents = get_contents("input.txt")?;
+    let contents = get_contents("input-cam.txt")?;
     let parsed = contents
         .trim()
         .split("\n")
@@ -36,14 +36,13 @@ fn main() -> Result<()> {
             .iter()
             .map(|c| (*(c.0), *(c.1)))
             .collect::<Vec<(char, usize)>>();
-        dbg!(frequency);
         key_values.sort_by(|a, b| match b.1.cmp(&a.1) {
             Ordering::Equal => a.0.cmp(&b.0),
             Ordering::Less => Ordering::Less,
             Ordering::Greater => Ordering::Greater,
         });
         let computed_checksum = key_values[..5].iter().map(|c| c.0).collect::<String>();
-        if dbg!(computed_checksum) == *dbg!(checksum) {
+        if computed_checksum == *checksum {
             a + sector_id
         } else {
             a
@@ -66,7 +65,10 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|word| decrypt(word, sector_id))
                 .collect::<Vec<String>>();
-            dbg!((sector_id, &decrypted));
+            // if decrypted == "NORTH POLE OBJECTS".to_string().split(' ').map(|c| c.to_string()).collect::<Vec<String>>() {
+            dbg!(&decrypted);
+            dbg!(&sector_id);
+            // }
             decrypted
         })
         .collect::<Vec<Vec<String>>>();
